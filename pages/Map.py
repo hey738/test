@@ -4,8 +4,6 @@ import streamlit as st
 from folium.plugins import MarkerCluster
 from streamlit_folium import folium_static
 
-from Home import total_patients, drop_patients
-
 
 # 1) 데이터 로딩
 @st.cache_data
