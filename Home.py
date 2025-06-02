@@ -76,7 +76,7 @@ with col3:
             margin: auto;
         ">
             <div style="font-size:18px; color:#dde5ff;">📅 평균 방문 간격</div>
-            <div style="font-size: 36px; font-weight: bold; color:white;">{avg_revisit_gap}일</div>
+            <div style="font-size: 48px; font-weight: bold; color:white;">{avg_revisit_gap}일</div>
         </div>
         """,
         unsafe_allow_html=True
