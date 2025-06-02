@@ -3,7 +3,7 @@ import pandas as pd
 
 st.set_page_config(page_title="호랑팜 대시보드", layout="wide")
 
-st.header('데모 데이터 입니다~', divider=orange)
+st.header('데모 데이터 입니다~', divider='orange')
 
 # 📊 예시 지표 값 (실제 계산 로직은 추후 연결)
 revisit_rate = 85          # %
