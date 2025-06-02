@@ -16,8 +16,6 @@ df = load_data()
 
 # 1. 방문 날짜 필터
 st.sidebar.subheader("기간 선택")
-year_list = sorted(df['최종내원일'].dt.year.dropna().astype(int).unique())
-selected_year = st.sidebar.selectbox("연도", ['전체'] + year_list, key='selected_year')
 # 날짜 범위
 min_date = df['최종내원일'].min().date()
 max_date = df['최종내원일'].max().date()
