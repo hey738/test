@@ -4,7 +4,9 @@ import streamlit as st
 from folium.plugins import MarkerCluster
 from streamlit_folium import folium_static
 
-
+st.set_page_config(
+    page_title = '어디서 얼마나 올까'
+)
 
 # 1) 데이터 로딩
 @st.cache_data
