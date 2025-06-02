@@ -20,6 +20,7 @@ st.sidebar.subheader("기간 선택")
 min_date = df['최종내원일'].min().date()
 max_date = df['최종내원일'].max().date()
 start_date, end_date = st.sidebar.date_input(
+    '날짜',
     [min_date, max_date],
     min_value=min_date,
     max_value=max_date,
