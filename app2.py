@@ -18,12 +18,6 @@ df = load_data()
 st.sidebar.subheader("기간 선택")
 year_list = sorted(df['최종내원일'].dt.year.dropna().astype(int).unique())
 selected_year = st.sidebar.selectbox("연도", ['전체'] + year_list, key='selected_year')
-# '전체' 선택 시 모든 년도
-if selected_year != '전체':
-    month_list = sorted(df[df['최종내원일'].dt.year == selected_year]['최종내원일'].dt.month.unique())
-else:
-    month_list = sorted(df['최종내원일'].dt.month.dropna().astype(int).unique())
-selected_month = st.sidebar.selectbox("월", ['전체'] + month_list, key='selected_month')
 # 날짜 범위
 min_date = df['최종내원일'].min().date()
 max_date = df['최종내원일'].max().date()
@@ -77,11 +71,6 @@ selected_agegroup = st.sidebar.selectbox(
 # --- 데이터 필터링 함수 ---
 def filter_data(df):
     tmp = df.copy()
-    # 날짜
-    if selected_year != '전체':
-        tmp = tmp[tmp['최종내원일'].dt.year == selected_year]
-    if selected_month != '전체':
-        tmp = tmp[tmp['최종내원일'].dt.month == selected_month]
     tmp = tmp[(tmp['최종내원일'].dt.date >= start_date) & (tmp['최종내원일'].dt.date <= end_date)]
     # 지역
     if selected_sido != '전체': tmp = tmp[tmp['region_1depth'] == selected_sido]
