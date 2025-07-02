@@ -107,7 +107,7 @@ daily = filtered.groupby('진료일자').size().reset_index(name='환자수')
 # 투명한 포인트를 크게 추가해 hover 인식 영역 확대
 base = alt.Chart(daily).encode(
     x='진료일자:T',
-    y='count:Q'
+    y='환자수:Q'
 )
 line = base.mark_line()
 points = base.mark_point(size=200, opacity=0).encode(
