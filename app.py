@@ -1,11 +1,3 @@
-# .streamlit/config.toml
-primaryColor = "#0072C3"
-backgroundColor = "#F7FAFC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#333333"
-font = "sans serif"
-
-# app.py
 import streamlit as st
 import pandas as pd
 import altair as alt
