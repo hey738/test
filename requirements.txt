@@ -4,3 +4,4 @@ altair
 folium
 streamlit-folium
 openpyxl
+gspread
