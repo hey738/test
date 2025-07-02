@@ -113,7 +113,7 @@ line = base.mark_line()
 points = base.mark_point(size=200, opacity=0).encode(
     tooltip=[
         alt.Tooltip('진료일자:T', title='날짜'),
-        alt.Tooltip('count:Q', title='내원 환자 수')
+        alt.Tooltip('환자수:Q', title='내원 환자 수')
     ]
 )
 line_chart = (line + points).interactive()
