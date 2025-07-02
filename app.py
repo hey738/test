@@ -103,7 +103,7 @@ elif return_ratio > 0.7:
 
 # 5) 일별 내원 추이
 st.subheader("일별 내원 추이")
-daily = filtered.groupby('진료일자').size().reset_index(name='count')
+daily = filtered.groupby('진료일자').size().reset_index(name='환자수')
 # 투명한 포인트를 크게 추가해 hover 인식 영역 확대
 base = alt.Chart(daily).encode(
     x='진료일자:T',
@@ -119,6 +119,7 @@ points = base.mark_point(size=200, opacity=0).encode(
 line_chart = (line + points).interactive()
 st.altair_chart(line_chart, use_container_width=True)
 
+# 6) 요일x시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
 filtered['요일'] = filtered['진료일자'].dt.day_name()
 heat = filtered.groupby(['요일', '진료시간대']).size().reset_index(name='count')
@@ -129,6 +130,7 @@ heat_chart = alt.Chart(heat).mark_rect().encode(
 ).properties()
 st.altair_chart(heat_chart, use_container_width=True)
 
+# 7) 환자 지도 분포
 st.subheader("환자 지도 분포")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=7)
 filtered['x'].replace("", pd.NA, inplace=True)
