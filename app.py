@@ -129,7 +129,7 @@ heat_chart = alt.Chart(heat).mark_rect().encode(
 ).properties()
 st.altair_chart(heat_chart, use_container_width=True)
 
-st.subheader("환자 지도 분포 (Fast Cluster)")
+st.subheader("환자 지도 분포")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=7)
 filtered['x'].replace("", pd.NA, inplace=True)
 filtered['y'].replace("", pd.NA, inplace=True)
