@@ -10,16 +10,24 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import folium
+import gspread
 from streamlit_folium import folium_static
 from folium.plugins import FastMarkerCluster
 
 # 페이지 설정
 st.set_page_config(page_title="환자 대시보드", layout="wide")
 
-# 1) 데이터 로드
+# 1) 데이터 로드 (Google Sheets via API)
 @st.cache_data
 def load_data():
-    return pd.read_excel("서울안녕환자데이터.xlsx")
+    # 서비스 계정 키와 스프레드시트 설정은 .streamlit/secrets.toml에 저장
+    creds_dict = st.secrets["gcp_service_account"]
+    client = gspread.service_account_from_dict(creds_dict)
+    sheet_id = st.secrets["google_sheets"]["sheet_id"]
+    worksheet_name = st.secrets["google_sheets"]["worksheet_name"]
+    sheet = client.open_by_key(sheet_id).worksheet(worksheet_name)
+    records = sheet.get_all_records()
+    return pd.DataFrame(records)
 
 df = load_data()
 
