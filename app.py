@@ -139,6 +139,8 @@ st.altair_chart(heat_chart, use_container_width=True)
 
 st.subheader("환자 지도 분포 (Fast Cluster)")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=7)
+filtered['x'].replace("", pd.NA, inplace=True)
+filtered['y'].replace("", pd.NA, inplace=True)
 data = list(filtered.dropna(subset=['y', 'x'])[['y', 'x']].itertuples(index=False, name=None))
 FastMarkerCluster(data).add_to(m)
 folium_static(m, width=800, height=600)
