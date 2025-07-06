@@ -95,12 +95,6 @@ col2.metric("신환 비율", f"{new_ratio:.1%}")
 col3.metric("재방문 비율", f"{return_ratio:.1%}")
 col4.metric("평균 연령", f"{avg_age:.1f}세")
 
-# 8) 알림
-if new_ratio > 0.5:
-    st.success("신환 비율이 50%를 넘었습니다.")
-elif return_ratio > 0.7:
-    st.success("재방문 비율이 70%를 넘었습니다.")
-
 # 5) 일별 내원 추이
 st.subheader("일별 내원 추이")
 daily = filtered.groupby('진료일자').size().reset_index(name='환자수')
