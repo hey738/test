@@ -126,7 +126,7 @@ heat = filtered.groupby(['요일', '진료시간대']).size().reset_index(name='
 heat_chart = alt.Chart(heat).mark_rect().encode(
     x=alt.X('진료시간대:O', title="시간대", axis=alt.Axis(labelAngle=0)),
     y=alt.Y('요일:O', sort=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']),
-    color=alt.Color('count:Q', scale=alt.Scale(scheme='greens'), title='환자 수')
+    color=alt.Color('count:Q', scale=alt.Scale(scheme='blues'), title='환자 수')
 ).properties()
 st.altair_chart(heat_chart, use_container_width=True)
 
