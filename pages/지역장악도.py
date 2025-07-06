@@ -106,8 +106,8 @@ bar = (
            x=alt.X(
                "연령대:O",
                title="연령대",
-               sort=custom_order,                  # 순서 지정
-               axis=alt.Axis(labelAngle=-45),      # 레이블 -45도 회전
+               sort=custom_order,
+               axis=alt.Axis(labelAngle=0)
            ),
            y=alt.Y("장악도(%):Q", title="장악도(%)"),
            tooltip=[
