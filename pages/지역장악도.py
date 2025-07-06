@@ -92,9 +92,31 @@ col3.metric("정확도", f"{round(acc*100)}%")
 # 7) 특정 행정동 선택 그래프
 st.subheader(f"{sel} 연령대 장악도 비교")
 sel_df = merge[merge['행정동']==sel]
-bar = alt.Chart(sel_df).mark_bar().encode(
-    x='연령대:O',
-    y='장악도(%):Q',
-    tooltip=['인구수','환자수','장악도(%)']
+# 원하는 순서 리스트
+custom_order = [
+    "0-9세", "10대", "20대", "30대", "40대",
+    "50대", "60대", "70대", "80대", "90대", "100세이상"
+]
+
+# 차트
+bar = (
+    alt.Chart(sel_df)
+       .mark_bar()
+       .encode(
+           x=alt.X(
+               "연령대:O",
+               title="연령대",
+               sort=custom_order,                  # 순서 지정
+               axis=alt.Axis(labelAngle=-45),      # 레이블 -45도 회전
+               scale=alt.Scale(rangeStep=50)       # (선택) 막대 폭 조절
+           ),
+           y=alt.Y("장악도(%):Q", title="장악도(%)"),
+           tooltip=[
+               alt.Tooltip("인구수:Q", title="인구수"),
+               alt.Tooltip("환자수:Q", title="환자수"),
+               alt.Tooltip("장악도(%):Q", title="장악도(%)"),
+           ]
+       )
+       .properties(height=400)
 )
 st.altair_chart(bar, use_container_width=True)
