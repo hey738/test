@@ -77,7 +77,7 @@ merge = pd.merge(pop_melt, grouped, on=['행정동','연령대'], how='left').fi
 merge['장악도(%)'] = (merge['환자수']/merge['인구수']*100).round(2)
 
 default = "경기도 시흥시 월곶동"
-options = merge['행정동'].unique()
+options = merge['행정동'].unique().tolist()
 sel = st.selectbox('행정동 선택', options, index=options.index(default))
 
 # KPI 카드
