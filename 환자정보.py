@@ -73,17 +73,17 @@ if gender != "전체":
     filtered = filtered[filtered['성별'] == gender]
 
 # 4) KPI 카드
-total_patients = len(filtered.drop_duplicates("환자번호"))
-total_counts = len(filtered)
+patients_in_period = len(filtered.drop_duplicates("환자번호"))
+counts_in_period = len(filtered)
 new_count = len(filtered[filtered['초/재진'] == "신환"])
 return_count = len(filtered[filtered['초/재진'] != "신환"])
-new_ratio = new_count / total_counts if total_counts else 0
-return_ratio = return_count / total_counts if total_counts else 0
+new_ratio = new_count / counts_in_period if counts_in_period else 0
+return_ratio = return_count / counts_in_period if counts_in_period else 0
 avg_age = filtered['나이'].mean()
 
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("총 환자 수", f"{total_patients:,}명")
-col2.metric("총 진료 횟수", f"{total_counts:,}번")
+col1.metric("환자수", f"{patients_in_period:,}명")
+col2.metric("진료 횟수", f"{counts_in_period:,}번")
 col3.metric("신환 비율", f"{new_ratio:.1%}")
 col4.metric("재방문 비율", f"{return_ratio:.1%}")
 col5.metric("평균 연령", f"{avg_age:.1f}세")
@@ -99,6 +99,7 @@ daily = (
     .reset_index(name='환자수')
     .sort_values('진료일자')
 )
+
 # 이동평균 컬럼 추가
 daily['MA6']  = daily['환자수'].rolling(window=6,  min_periods=1).mean()
 daily['MA30'] = daily['환자수'].rolling(window=30, min_periods=1).mean()
@@ -112,7 +113,6 @@ melted = daily.melt(
     var_name='지표',
     value_name='값'
 )
-
 # 범례 클릭으로 토글할 셀렉션
 legend_sel = alt.selection_multi(fields=['지표'], bind='legend')
 
@@ -122,13 +122,13 @@ trend_chart = (
        .mark_line()
        .encode(
            x=alt.X('진료일자:T', title='진료일자'),
-           y=alt.Y('값:Q', title='진료 횟수'),
+           y=alt.Y('값:Q', title='진료횟수'),
            color=alt.Color('지표:N', title='지표'),
            opacity=alt.condition(legend_sel, alt.value(1), alt.value(0.1)),
            tooltip=[
                alt.Tooltip('진료일자:T', title='날짜'),
                alt.Tooltip('지표:N', title='지표'),
-               alt.Tooltip('값:Q', title='값')
+               alt.Tooltip('값:Q', title='평균내원수')
            ]
        )
        .add_selection(legend_sel)
@@ -136,7 +136,23 @@ trend_chart = (
        .properties(height=400)
 )
 
-st.altair_chart(trend_chart, use_container_width=True)
+# 2) 툴팁 전용 투명 히트박스
+hover_area = (
+    alt.Chart(melted)
+       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
+       .transform_filter(alt.datum.지표 == '환자수')
+       .encode(
+           x='진료일자:T',
+           y='값:Q',
+           tooltip=[                          # 여기서만 툴팁
+               alt.Tooltip('진료일자:T', title='날짜'),
+               alt.Tooltip('값:Q',   title='내원수')
+           ]
+       )
+)
+
+final_chart = (trend_chart + hover_area)
+st.altair_chart(final_chart, use_container_width=True)
 
 # 6) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
