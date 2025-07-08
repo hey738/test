@@ -122,7 +122,7 @@ trend_chart = (
        .mark_line()
        .encode(
            x=alt.X('진료일자:T', title='진료일자'),
-           y=alt.Y('값:Q', title='내원 횟수'),
+           y=alt.Y('값:Q', title='진료 횟수'),
            color=alt.Color('지표:N', title='지표'),
            opacity=alt.condition(legend_sel, alt.value(1), alt.value(0.1)),
            tooltip=[
