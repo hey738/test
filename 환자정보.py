@@ -139,7 +139,7 @@ trend_chart = (
 # 2) 툴팁 전용 투명 히트박스
 hover_area = (
     alt.Chart(melted)
-       .mark_point(size=100, opacity=0)       # 투명, 보이지 않음
+       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
        .transform_filter(alt.datum.지표 == '환자수')
        .encode(
            x='진료일자:T',
@@ -147,6 +147,22 @@ hover_area = (
            tooltip=[                          # 여기서만 툴팁
                alt.Tooltip('진료일자:T', title='날짜'),
                alt.Tooltip('값:Q',   title='내원수')
+           ]
+       )
+)
+
+# 3) 추세선 툴팁 전용 투명 히트박스
+hover_area = (
+    alt.Chart(melted)
+       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
+       .transform_filter(alt.datum.지표 != '환자수')
+       .encode(
+           x='진료일자:T',
+           y='값:Q',
+           tooltip=[                          # 여기서만 툴팁
+               alt.Tooltip('진료일자:T', title='날짜'),
+               alt.Tooltip('지표:N', title='지표'),
+               alt.Tooltip('값:Q', title='평균내원수')
            ]
        )
 )
