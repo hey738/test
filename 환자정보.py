@@ -5,6 +5,7 @@ import folium
 import gspread
 from streamlit_folium import folium_static
 from folium.plugins import FastMarkerCluster
+from datetime import datetime, timedelta
 
 # 페이지 설정
 st.set_page_config(page_title="환자 대시보드", layout="wide")
@@ -12,7 +13,6 @@ st.set_page_config(page_title="환자 대시보드", layout="wide")
 # 1) 데이터 로드 (Google Sheets via API)
 @st.cache_data
 def load_data():
-    # 서비스 계정 키와 스프레드시트 설정은 .streamlit/secrets.toml에 저장
     creds_dict = st.secrets["gcp_service_account"]
     client = gspread.service_account_from_dict(creds_dict)
     sheet_id = st.secrets["google_sheets"]["sheet_id"]
@@ -24,15 +24,12 @@ def load_data():
 df = load_data()
 
 # 2) 전처리
-# 진료일자 변환
 df['진료일자'] = pd.to_datetime(df['진료일자'], format='%Y%m%d')
-# 진료시간대 분류 함수
+
 def categorize_time(hms):
-    # hms 값을 문자열로 변환한 뒤 반드시 6자리로 앞을 0으로 채움
     if pd.isna(hms):
         time_str = '000000'
     else:
-        # 숫자형이면 int로 바꾸고, 문자열이면 그대로 변환
         try:
             val = int(hms)
             time_str = str(val).zfill(6)
@@ -41,9 +38,8 @@ def categorize_time(hms):
     hour = int(time_str[:2])
     return f"{hour:02d}"
 
-# 시간대 컬럼 생성
 df['진료시간대'] = df['진료시간'].apply(categorize_time)
-# 연령대 구분 (10단위)
+
 bins = list(range(0, 101, 10)) + [999]
 labels = ["10대이하"] + [f"{i}대" for i in range(10, 100, 10)] + ["90대이상"]
 df['연령대'] = pd.cut(
@@ -56,23 +52,18 @@ df['연령대'] = pd.cut(
 
 # 3) 사이드바 필터
 st.sidebar.header("필터 설정")
-# 시작일과 종료일을 별도 입력으로 분리하여 UX 개선
-start_date = st.sidebar.date_input(
-    "시작 진료일자(2023/11/09)", df['진료일자'].min()
-)
-end_date = st.sidebar.date_input(
-    "종료 진료일자(2025/06/24)", df['진료일자'].max(),
-    #min_value=start_date  # 종료일은 시작일보다 이전으로 지정할 수 없음
-)
+start_date = st.sidebar.date_input("시작 진료일자", df['진료일자'].min())
+end_date = st.sidebar.date_input("종료 진료일자", df['진료일자'].max())
 age_band = st.sidebar.multiselect(
-    "연령대", options=df['연령대'].cat.categories.tolist(),
+    "연령대",
+    options=df['연령대'].cat.categories.tolist(),
     default=df['연령대'].cat.categories.tolist()
 )
 gender = st.sidebar.selectbox(
-    "성별", options=["전체"] + df['성별'].dropna().unique().tolist()
+    "성별",
+    options=["전체"] + df['성별'].dropna().unique().tolist()
 )
 
-# 필터 적용
 filtered = df[
     (df['진료일자'] >= pd.to_datetime(start_date)) &
     (df['진료일자'] <= pd.to_datetime(end_date)) &
@@ -82,38 +73,72 @@ if gender != "전체":
     filtered = filtered[filtered['성별'] == gender]
 
 # 4) KPI 카드
-total_patients = len(filtered)
+total_patients = len(filtered.drop_duplicates("환자번호"))
+total_counts = len(filtered)
 new_count = len(filtered[filtered['초/재진'] == "신환"])
 return_count = len(filtered[filtered['초/재진'] != "신환"])
-new_ratio = new_count / total_patients if total_patients else 0
-return_ratio = return_count / total_patients if total_patients else 0
+new_ratio = new_count / total_counts if total_counts else 0
+return_ratio = return_count / total_counts if total_counts else 0
 avg_age = filtered['나이'].mean()
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("총 환자 수", total_patients)
-col2.metric("신환 비율", f"{new_ratio:.1%}")
-col3.metric("재방문 비율", f"{return_ratio:.1%}")
-col4.metric("평균 연령", f"{avg_age:.1f}세")
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("총 환자 수", f"{total_patients:,}명")
+col2.metric("총 진료 횟수", f"{total_counts:,}번")
+col3.metric("신환 비율", f"{new_ratio:.1%}")
+col4.metric("재방문 비율", f"{return_ratio:.1%}")
+col5.metric("평균 연령", f"{avg_age:.1f}세")
 
-# 5) 일별 내원 추이
+# 5) 일별 내원 추이 (토글 가능한 추세선)
 st.subheader("일별 내원 추이")
-daily = filtered.groupby('진료일자').size().reset_index(name='환자수')
-# 투명한 포인트를 크게 추가해 hover 인식 영역 확대
-base = alt.Chart(daily).encode(
-    x='진료일자:T',
-    y='환자수:Q'
-)
-line = base.mark_line()
-points = base.mark_point(size=200, opacity=0).encode(
-    tooltip=[
-        alt.Tooltip('진료일자:T', title='날짜'),
-        alt.Tooltip('환자수:Q', title='내원 환자 수')
-    ]
-)
-line_chart = (line + points).interactive()
-st.altair_chart(line_chart, use_container_width=True)
 
-# 6) 요일x시간대 히트맵
+# 일별 집계
+daily = (
+    filtered
+    .groupby('진료일자')
+    .size()
+    .reset_index(name='환자수')
+    .sort_values('진료일자')
+)
+# 이동평균 컬럼 추가
+daily['MA6']  = daily['환자수'].rolling(window=6,  min_periods=1).mean()
+daily['MA30'] = daily['환자수'].rolling(window=30, min_periods=1).mean()
+daily['MA60'] = daily['환자수'].rolling(window=60, min_periods=1).mean()
+daily['MA90'] = daily['환자수'].rolling(window=90, min_periods=1).mean()
+
+# long form 변환
+melted = daily.melt(
+    id_vars='진료일자',
+    value_vars=['환자수','MA6','MA30','MA60','MA90'],
+    var_name='지표',
+    value_name='값'
+)
+
+# 범례 클릭으로 토글할 셀렉션
+legend_sel = alt.selection_multi(fields=['지표'], bind='legend')
+
+# 차트
+trend_chart = (
+    alt.Chart(melted)
+       .mark_line()
+       .encode(
+           x=alt.X('진료일자:T', title='진료일자'),
+           y=alt.Y('값:Q', title='내원 환자 수'),
+           color=alt.Color('지표:N', title='지표'),
+           opacity=alt.condition(legend_sel, alt.value(1), alt.value(0.1)),
+           tooltip=[
+               alt.Tooltip('진료일자:T', title='날짜'),
+               alt.Tooltip('지표:N', title='지표'),
+               alt.Tooltip('값:Q', title='값')
+           ]
+       )
+       .add_selection(legend_sel)
+       .interactive()
+       .properties(height=400)
+)
+
+st.altair_chart(trend_chart, use_container_width=True)
+
+# 6) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
 filtered['요일'] = filtered['진료일자'].dt.day_name()
 heat = filtered.groupby(['요일', '진료시간대']).size().reset_index(name='count')
@@ -121,7 +146,7 @@ heat_chart = alt.Chart(heat).mark_rect().encode(
     x=alt.X('진료시간대:O', title="시간대", axis=alt.Axis(labelAngle=0)),
     y=alt.Y('요일:O', sort=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']),
     color=alt.Color('count:Q', scale=alt.Scale(scheme='blues'), title='환자 수')
-).properties()
+)
 st.altair_chart(heat_chart, use_container_width=True)
 
 # 7) 환자 지도 분포
@@ -129,6 +154,6 @@ st.subheader("환자 지도 분포")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=7)
 filtered['x'].replace("", pd.NA, inplace=True)
 filtered['y'].replace("", pd.NA, inplace=True)
-data = list(filtered.dropna(subset=['y', 'x'])[['y', 'x']].itertuples(index=False, name=None))
+data = list(filtered.dropna(subset=['y','x'])[['y','x']].itertuples(index=False, name=None))
 FastMarkerCluster(data).add_to(m)
 folium_static(m, width=800, height=600)
