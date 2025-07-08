@@ -139,7 +139,7 @@ trend_chart = (
 # 2) 툴팁 전용 투명 히트박스
 hover_area = (
     alt.Chart(melted)
-       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
+       .mark_point(size=100, opacity=0)       # 투명, 보이지 않음
        .transform_filter(alt.datum.지표 == '환자수')
        .encode(
            x='진료일자:T',
