@@ -137,9 +137,12 @@ trend_chart = (
                alt.Tooltip('값:Q', title='평균내원수')
            ]
        )
-       .add_selection(legend_sel)
+       .add_params(legend_sel)
        .interactive()
-       .properties(height=400)
+       .properties(
+        width='container',
+        height=400
+    )
 )
 
 # 툴팁 전용 투명 히트박스
@@ -155,6 +158,10 @@ daily_hover = (
                alt.Tooltip('값:Q',   title='내원수')
            ]
        )
+        .properties(
+            width='container',
+            height=400
+        )
 )
 
 # 추세선 전용 툴팁 투명 히트박스
@@ -171,6 +178,10 @@ trend_hover = (
                alt.Tooltip('값:Q', title='평균내원수')
            ]
        )
+        .properties(
+            width='container',
+            height=400
+        )
 )
 
 final_chart = (trend_chart + daily_hover + trend_hover)
