@@ -220,7 +220,7 @@ comp_chart = (
        .mark_line()
        .encode(
            x=alt.X('plot_date:T', title='진료일자'),
-           y=alt.Y('환자수:Q', title='내원수'),
+           y=alt.Y('환자수:Q', title='진료횟수'),
            color=alt.Color(
                'year_group:N',
                title='기간',
