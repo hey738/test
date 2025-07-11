@@ -140,9 +140,13 @@ trend_chart = (
        .add_params(legend_sel)
        .interactive()
        .properties(
-        width='container',
-        height=400
-    )
+            width='container',
+            height=400
+        )
+        .configure_autosize(
+            type='fit-x',
+            contains='padding'
+        )
 )
 
 # 툴팁 전용 투명 히트박스
@@ -161,6 +165,10 @@ daily_hover = (
         .properties(
             width='container',
             height=400
+        )
+        .configure_autosize(
+            type='fit-x',
+            contains='padding'
         )
 )
 
@@ -181,6 +189,10 @@ trend_hover = (
         .properties(
             width='container',
             height=400
+        )
+        .configure_autosize(
+            type='fit-x',
+            contains='padding'
         )
 )
 
