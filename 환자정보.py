@@ -88,7 +88,7 @@ col4.metric("재방문 비율", f"{return_ratio:.1%}")
 col5.metric("평균 연령", f"{avg_age:.1f}세")
 
 # 5) 일별 내원 추이 (토글 가능한 추세선)
-# st.subheader("일별 내원 추이")
+st.subheader("일별 내원 추이")
 
 # 일별 집계
 daily = (
@@ -174,7 +174,7 @@ trend_hover = (
 )
 
 final_chart = (trend_chart + daily_hover + trend_hover)
-# st.altair_chart(final_chart, use_container_width=True)
+st.altair_chart(final_chart, use_container_width=True)
 
 # 일별 집계
 daily2 = (
@@ -185,7 +185,7 @@ daily2 = (
     .sort_values('진료일자')
 )
 
-# st.subheader("전년 동기 내원 추이 비교")
+st.subheader("전년 동기 내원 추이 비교")
 
 # 기준 기간 정의
 start = pd.to_datetime(start_date)
@@ -252,18 +252,18 @@ comp_hover = (
 )
 
 final_comp_chart = (comp_chart + comp_hover)
-# st.altair_chart(comp_chart, use_container_width=True)
+st.altair_chart(comp_chart, use_container_width=True)
 
 # 두 차트를 같은 행에 배치
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("일별 내원 추이")
-    st.altair_chart(final_chart, use_container_width=True)
-
-with col2:
-    st.subheader("전년 동기 내원 추이 비교")
-    st.altair_chart(final_comp_chart, use_container_width=True)
+# col1, col2 = st.columns(2)
+#
+# with col1:
+#     st.subheader("일별 내원 추이")
+#     st.altair_chart(final_chart, use_container_width=True)
+#
+# with col2:
+#     st.subheader("전년 동기 내원 추이 비교")
+#     st.altair_chart(final_comp_chart, use_container_width=True)
 
 # 7) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
