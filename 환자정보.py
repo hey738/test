@@ -120,83 +120,58 @@ trend_chart = (
     alt.Chart(melted)
        .mark_line()
        .encode(
-           x=alt.X('진료일자:T', title='진료일자'),
-           y=alt.Y('값:Q', title='진료횟수'),
+           x='진료일자:T',
+           y='값:Q',
            color=alt.Color(
                '지표:N',
-               title='지표',
-                scale=alt.Scale(
+               scale=alt.Scale(
                    domain=['환자수','MA6','MA30','MA60','MA90'],
-                   range=['#FFDC3C', '#4BA3C7', '#00C49A', '#FF8C42', '#9B59B6']
+                   range=['#FFDC3C','#4BA3C7','#00C49A','#FF8C42','#9B59B6']
                )
            ),
            opacity=alt.condition(legend_sel, alt.value(1), alt.value(0.1)),
            tooltip=[
                alt.Tooltip('진료일자:T', title='날짜'),
-               alt.Tooltip('지표:N', title='지표'),
-               alt.Tooltip('값:Q', title='평균내원수')
+               alt.Tooltip('지표:N',      title='지표'),
+               alt.Tooltip('값:Q',        title='내원수')
            ]
        )
        .add_params(legend_sel)
-       .interactive()
-       .properties(
-            width='container',
-            height=400
-        )
-        .configure_autosize(
-            type='fit-x',
-            contains='padding'
-        )
+        .interactive()
+       .properties(height=400)
 )
 
-# 툴팁 전용 투명 히트박스
 daily_hover = (
     alt.Chart(melted)
        .mark_point(size=200, opacity=0)
-       .transform_filter(alt.datum.지표 == '환자수')
+       .transform_filter(alt.datum.지표=='환자수')
        .encode(
-           x='진료일자:T',
-           y='값:Q',
-           tooltip=[
-               alt.Tooltip('진료일자:T', title='날짜'),
-               alt.Tooltip('값:Q',   title='내원수')
-           ]
-       )
-        .properties(
-            width='container',
-            height=400
+            x='진료일자:T', y='값:Q',
+            tooltip=['진료일자:T','값:Q']
         )
-        .configure_autosize(
-            type='fit-x',
-            contains='padding'
-        )
+        .properties(height=400)
 )
 
-# 추세선 전용 툴팁 투명 히트박스
 trend_hover = (
     alt.Chart(melted)
        .mark_point(size=200, opacity=0)
-       .transform_filter(alt.datum.지표 != '환자수')
+       .transform_filter(alt.datum.지표!='환자수')
        .encode(
-           x='진료일자:T',
-           y='값:Q',
-           tooltip=[
-               alt.Tooltip('진료일자:T', title='날짜'),
-               alt.Tooltip('지표:N', title='지표'),
-               alt.Tooltip('값:Q', title='평균내원수')
-           ]
-       )
-        .properties(
-            width='container',
-            height=400
+            x='진료일자:T', y='값:Q',
+            tooltip=['진료일자:T','지표:N','값:Q']
         )
-        .configure_autosize(
-            type='fit-x',
-            contains='padding'
-        )
+        .properties(height=400)
 )
 
-final_chart = (trend_chart + daily_hover + trend_hover)
+final_chart = (
+    alt.layer(trend_chart, daily_hover, trend_hover)
+       .resolve_scale(y='shared')
+       .properties(
+           title="일별 내원 추이",
+           width='container',
+           autosize={'type':'fit-x','contains':'padding'}
+       )
+)
 st.altair_chart(final_chart, use_container_width=True)
 
 # 일별 집계
