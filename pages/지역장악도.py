@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-import folium
 import altair as alt
 import gspread
-from streamlit_folium import folium_static
+import numpy as np
 from datetime import datetime, timedelta
 
 # 페이지 설정
@@ -16,6 +15,54 @@ province_map = {
     '경남': '경상남도', '경북': '경상북도', '전남': '전라남도', '충북': '충청북도', '충남': '충청남도'
 }
 
+special_cities = {
+    "수원시","성남시","안양시","부천시","안산시",
+    "고양시","용인시","청주시","천안시",
+    "전주시","포항시","창원시"
+}
+
+##### 헬퍼: 계층별 마스크 빌드 #####
+def build_mask(df, province, city, dong):
+    mask = pd.Series(True, index=df.index)
+    if province != "전체":
+        mask &= df["시/도"] == province
+    if city != "전체":
+        mask &= df["시/군/구"] == city
+    if dong != "전체":
+        mask &= df["행정동"] == dong
+    return mask
+
+def split_address(addr: str):
+    parts = addr.split()
+    # 세종특별자치시 처리: ['세종특별자치시', '어진동']
+    if parts[0] == "세종특별자치시" and len(parts) == 2:
+        return pd.Series({
+            "시/도": parts[0],
+            "시/군/구": "",
+            "행정동": parts[1]
+        })
+    # 네 칸짜리: ['경기도', '수원시', '영통구', '망포동']
+    elif len(parts) == 4 and parts[1] in special_cities:
+        return pd.Series({
+            "시/도": parts[0],
+            "시/군/구": f"{parts[1]} {parts[2]}",
+            "행정동": parts[3]
+        })
+    # 기본 세 칸짜리: ['서울특별시', '강남구', '역삼동']
+    elif len(parts) == 3 and parts[1] not in special_cities:
+        return pd.Series({
+            "시/도": parts[0],
+            "시/군/구": parts[1],
+            "행정동": parts[2]
+        })
+    # 그 외는 무시
+    else:
+        return pd.Series({
+            "시/도": None,
+            "시/군/구": None,
+            "행정동": None
+        })
+
 # 1) 인구 데이터 로드 (Google Sheets)
 @st.cache_data
 def load_population():
@@ -24,13 +71,20 @@ def load_population():
     sheet_id = st.secrets["google_sheets"]["sheet_id"]
     ws = client.open_by_key(sheet_id).worksheet("연령별인구현황")
     pop = pd.DataFrame(ws.get_all_records())
-    pop = pop.rename(columns={"행정기관": "행정동"})
+
+    split_df = pop["행정기관"].apply(split_address)
+    split_df.columns = ["시/도", "시/군/구", "행정동"]
+
+    df = pd.concat([pop, split_df], axis=1)
+
+    df = df[df["시/도"].notna()]
+
     # 연령대 컬럼 식별
-    age_cols = [c for c in pop.columns if c not in ['행정동','행정기관코드','총 인구수', '연령구간인구수']]
-    if '총 인구수' in pop.columns:
-        pop = pop.rename(columns={'총 인구수':'전체인구'})
+    age_cols = [c for c in df.columns if c not in ['시/도', '시/군/구', '행정동', '행정기관', '행정기관코드','총 인구수', '연령구간인구수']]
+    if '총 인구수' in df.columns:
+        df = df.rename(columns={'총 인구수':'전체인구'})
     # pop: 행정동(예: '경기도 시흥시 월곶동') + 연령대별 인구수 + 전체인구
-    return pop[['행정동'] + age_cols + ['전체인구']]
+    return df[['행정기관'] + ['시/도'] + ['시/군/구'] + ['행정동'] + age_cols + ['전체인구']]
 
 # 2) 환자 데이터 로드 및 전처리
 @st.cache_data
@@ -52,70 +106,146 @@ def load_patient_data():
     # 시도명 매핑
     df['시/도'] = df['시/도'].map(province_map).fillna(df['시/도'])
     # full 행정동 생성 (예: '경기도 시흥시 월곶동')
-    df['행정동'] = df['시/도'] + ' ' + df['시/군/구'] + ' ' + df['행정동']
+    df['행정기관'] = np.where(
+        df['시/도'] == '세종특별자치시',
+        # 세종일 경우: 시/도 + 행정동
+        df['시/도'] + ' ' + df['행정동'],
+        # 그 외: 시/도 + 시/군/구 + 행정동
+        df['시/도'] + ' ' + df['시/군/구'] + ' ' + df['행정동']
+    )
     return [df, acc]
 
 # 데이터 로드
 pop_df = load_population()
 patient_df, acc = load_patient_data()
 
-# 3) 활성 환자 기간 설정
-st.sidebar.header("활성 환자 기간 설정")
-months = st.sidebar.slider("최근 몇 개월 활성으로 볼지", 6, 24, 12)
-cutoff = datetime.now() - timedelta(days=30*months)
-st.sidebar.write(f"컷오프 날짜: {cutoff.date()}")
+# --- 사이드바 expander에 필터 묶기 ---
+with st.sidebar.expander("활성 환자 기간", expanded=True):
+    months = st.slider("최근 몇 개월 활성으로 볼지", 6, 24, 12)
+    cutoff = datetime.now() - timedelta(days=30*months)
+    st.write(f"{cutoff.date()} 이후")
 
-# 4) 활성 환자 필터링 및 집계
+with st.sidebar.expander("지역 선택", expanded=True):
+    provinces = ["전체"] + sorted(pop_df['시/도'].unique())
+    province = st.selectbox("시/도", provinces, index=0)
+    if province == "전체":
+        cities = ["전체"]
+    else:
+        cities = ["전체"] + sorted(
+            pop_df[pop_df['시/도']==province]['시/군/구'].unique()
+        )
+    city = st.selectbox("시/군/구", cities)
+    if province == "전체" or city == "전체":
+        dongs = ["전체"]
+    else:
+        dongs = ["전체"] + sorted(
+            pop_df[(pop_df['시/도']==province)&(pop_df['시/군/구']==city)]['행정동'].unique()
+        )
+    dong = st.selectbox("행정동", dongs)
+
+# --- 활성 환자 필터링 & 집계 ---
 active = patient_df[patient_df['진료일자'] >= cutoff].copy()
-# 행정동․연령대별 고유 환자 수
-grouped = active.groupby(['행정동','연령대'])['환자번호'].nunique().reset_index(name='환자수')
+grouped = (
+    active
+    .groupby(['시/도','시/군/구','행정동','연령대'])['환자번호']
+    .nunique()
+    .reset_index(name='환자수')
+)
 
-# 5) 인구 대비 장악도 계산
-age_cols = [c for c in pop_df.columns if c not in ['행정동','전체인구']]
-pop_melt = pop_df.melt(id_vars=['행정동','전체인구'], value_vars=age_cols, var_name='연령대', value_name='인구수')
-merge = pd.merge(pop_melt, grouped, on=['행정동','연령대'], how='left').fillna({'환자수':0})
+# --- 인구 대비 장악도 계산 ---
+# age_cols를 라벨 패턴으로 뽑기 (9세이하 포함)
+age_cols = [
+    c for c in pop_df.columns
+    if c == "9세이하" or c.endswith("대") or c.endswith("세이상")
+]
+
+pop_melt = pop_df.melt(
+    id_vars=['시/도','시/군/구','행정동','전체인구'],
+    value_vars=age_cols,
+    var_name='연령대',
+    value_name='인구수'
+)
+pop_melt['인구수'] = (
+    pop_melt['인구수']
+      .astype(str)
+      .str.replace(',', '')
+      .pipe(pd.to_numeric, errors='coerce')
+)
+
+merge = pd.merge(
+    pop_melt, grouped,
+    on=['시/도','시/군/구','행정동','연령대'],
+    how='left'
+).fillna({'환자수':0,'인구수':0})
 merge['장악도(%)'] = (merge['환자수']/merge['인구수']*100).round(2)
 
-default = "경기도 시흥시 월곶동"
-options = merge['행정동'].unique().tolist()
-sel = st.selectbox('행정동 선택', options, index=options.index(default))
+# --- KPI 카드 ---
+mask_pop = build_mask(pop_df, province, city, dong)
+mask_pat = build_mask(patient_df, province, city, dong)
+mask_act = build_mask(active, province, city, dong)
 
-# KPI 카드
 col1, col2, col3 = st.columns(3)
-col1.metric("인구수", f"{pop_df[pop_df['행정동']==sel]['전체인구'].values[0]:,}명")
-col2.metric("환자수", f"{len(patient_df[patient_df['행정동'] == sel]):,}명")
-col3.metric("활성 환자수", f"{len(active[active['행정동'] == sel]):,}명")
-col1.metric("지역 장악도", f"{round(len(patient_df[patient_df['행정동'] == sel]) / (pop_df[pop_df['행정동']==sel]['전체인구'].values[0])*100, 1)}%")
-col2.metric("기간내 지역 장악도", f"{round(len(active[active['행정동'] == sel]) / (pop_df[pop_df['행정동']==sel]['전체인구'].values[0])*100, 1)}%")
-col3.metric("정확도", f"{round(acc*100)}%")
+total_pop       = int(pop_df.loc[mask_pop, '전체인구'].sum())
+total_patients  = patient_df.loc[mask_pat, '환자번호'].nunique()
+active_patients = active.loc[mask_act, '환자번호'].nunique()
+region_pen      = total_patients/total_pop*100 if total_pop else 0
+period_pen      = active_patients/total_pop*100 if total_pop else 0
 
-# 7) 특정 행정동 선택 그래프
-st.subheader(f"{sel} 연령대 장악도 비교")
-sel_df = merge[merge['행정동']==sel]
-# 원하는 순서 리스트
+col1.metric("인구수", f"{total_pop:,}명")
+col2.metric("환자수", f"{total_patients:,}명")
+col3.metric("활성 환자수", f"{active_patients:,}명")
+
+col1.metric("지역 장악도", f"{region_pen:.1f}%")
+col2.metric("기간내 장악도", f"{period_pen:.1f}%")
+col3.metric("정확도", f"{acc*100:.0f}%")
+
+# --- 연령대 장악도 막대 차트 ---
+mask_merge = build_mask(merge, province, city, dong)
+sel_df    = merge.loc[mask_merge]
+
+agg_df = (
+    sel_df
+    .groupby('연령대', as_index=False)[['인구수','환자수']]
+    .sum()
+)
+agg_df['장악도(%)'] = (agg_df['환자수']/agg_df['인구수']*100).round(4)
+
 custom_order = [
-    "0-9세", "10대", "20대", "30대", "40대",
+    "9세이하", "10대", "20대", "30대", "40대",
     "50대", "60대", "70대", "80대", "90대", "100세이상"
 ]
 
-# 차트
+title = (
+    f"{dong} 연령대 장악도" if dong!="전체" else
+    f"{province} {city} 연령대 장악도" if city!="전체" else
+    f"{province} 연령대 장악도" if province!="전체" else
+    "전체 지역 연령대 장악도"
+)
+st.subheader(title)
+
 bar = (
-    alt.Chart(sel_df)
+    alt.Chart(agg_df)
        .mark_bar()
        .encode(
-           x=alt.X(
-               "연령대:O",
-               title="연령대",
-               sort=custom_order,
-               axis=alt.Axis(labelAngle=0)
-           ),
-           y=alt.Y("장악도(%):Q", title="장악도(%)"),
+           x=alt.X('연령대:O', sort=custom_order, axis=alt.Axis(labelAngle=0)),
+            y=alt.Y(
+                '장악도(%):Q',
+                axis=alt.Axis(format='.4f'),  # 소수점 두 자리로 라벨
+                title='장악도(%)'
+            ),
            tooltip=[
-               alt.Tooltip("인구수:Q", title="인구수"),
-               alt.Tooltip("환자수:Q", title="환자수"),
-               alt.Tooltip("장악도(%):Q", title="장악도(%)"),
+               alt.Tooltip('인구수:Q', title='인구수', format=','),
+               alt.Tooltip('환자수:Q', title='환자수', format=','),
+               alt.Tooltip('장악도(%):Q', title='장악도(%)', format='.4f'),
            ]
        )
        .properties(height=400)
 )
 st.altair_chart(bar, use_container_width=True)
+
+# 1) 전치 & 컬럼 순서 재배치
+df_t = agg_df.set_index('연령대').T[custom_order].copy()
+
+# 2) '인구수' 행에만 천단위 콤마 적용
+df_t.loc['인구수'] = df_t.loc['인구수'].astype(int).map("{:,}".format)
+st.dataframe(df_t)
