@@ -5,7 +5,6 @@ import folium
 import gspread
 from streamlit_folium import folium_static
 from folium.plugins import FastMarkerCluster
-from datetime import datetime, timedelta
 
 # 페이지 설정
 st.set_page_config(page_title="환자 대시보드", layout="wide")
@@ -41,7 +40,7 @@ def categorize_time(hms):
 df['진료시간대'] = df['진료시간'].apply(categorize_time)
 
 bins = list(range(0, 101, 10)) + [999]
-labels = ["10대이하"] + [f"{i}대" for i in range(10, 100, 10)] + ["90대이상"]
+labels = ["9세이하"] + [f"{i}대" for i in range(10, 100, 10)] + ["100세이상"]
 df['연령대'] = pd.cut(
     df['나이'],
     bins=bins,
@@ -89,7 +88,7 @@ col4.metric("재방문 비율", f"{return_ratio:.1%}")
 col5.metric("평균 연령", f"{avg_age:.1f}세")
 
 # 5) 일별 내원 추이 (토글 가능한 추세선)
-st.subheader("일별 내원 추이")
+# st.subheader("일별 내원 추이")
 
 # 일별 집계
 daily = (
@@ -123,7 +122,14 @@ trend_chart = (
        .encode(
            x=alt.X('진료일자:T', title='진료일자'),
            y=alt.Y('값:Q', title='진료횟수'),
-           color=alt.Color('지표:N', title='지표'),
+           color=alt.Color(
+               '지표:N',
+               title='지표',
+                scale=alt.Scale(
+                   domain=['환자수','MA6','MA30','MA60','MA90'],
+                   range=['#FFDC3C', '#4BA3C7', '#00C49A', '#FF8C42', '#9B59B6']
+               )
+           ),
            opacity=alt.condition(legend_sel, alt.value(1), alt.value(0.1)),
            tooltip=[
                alt.Tooltip('진료일자:T', title='날짜'),
@@ -136,30 +142,30 @@ trend_chart = (
        .properties(height=400)
 )
 
-# 2) 툴팁 전용 투명 히트박스
-hover_area = (
+# 툴팁 전용 투명 히트박스
+daily_hover = (
     alt.Chart(melted)
-       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
+       .mark_point(size=200, opacity=0)
        .transform_filter(alt.datum.지표 == '환자수')
        .encode(
            x='진료일자:T',
            y='값:Q',
-           tooltip=[                          # 여기서만 툴팁
+           tooltip=[
                alt.Tooltip('진료일자:T', title='날짜'),
                alt.Tooltip('값:Q',   title='내원수')
            ]
        )
 )
 
-# 3) 추세선 툴팁 전용 투명 히트박스
-hover_area = (
+# 추세선 전용 툴팁 투명 히트박스
+trend_hover = (
     alt.Chart(melted)
-       .mark_point(size=200, opacity=0)       # 투명, 보이지 않음
+       .mark_point(size=200, opacity=0)
        .transform_filter(alt.datum.지표 != '환자수')
        .encode(
            x='진료일자:T',
            y='값:Q',
-           tooltip=[                          # 여기서만 툴팁
+           tooltip=[
                alt.Tooltip('진료일자:T', title='날짜'),
                alt.Tooltip('지표:N', title='지표'),
                alt.Tooltip('값:Q', title='평균내원수')
@@ -167,17 +173,106 @@ hover_area = (
        )
 )
 
-final_chart = (trend_chart + hover_area)
-st.altair_chart(final_chart, use_container_width=True)
+final_chart = (trend_chart + daily_hover + trend_hover)
+# st.altair_chart(final_chart, use_container_width=True)
 
-# 6) 요일×시간대 히트맵
+# 일별 집계
+daily2 = (
+    df
+    .groupby('진료일자')
+    .size()
+    .reset_index(name='환자수')
+    .sort_values('진료일자')
+)
+
+# st.subheader("전년 동기 내원 추이 비교")
+
+# 기준 기간 정의
+start = pd.to_datetime(start_date)
+end   = pd.to_datetime(end_date)
+
+# 전년 동기 기간
+ly_start = start - pd.DateOffset(years=1)
+ly_end   = end   - pd.DateOffset(years=1)
+
+# 기간별 필터링
+curr = daily2[(daily2['진료일자'] >= start) & (daily2['진료일자'] <= end)].copy()
+ly   = daily2[(daily2['진료일자'] >= ly_start) & (daily2['진료일자'] <= ly_end)].copy()
+
+# 전년 데이터를 '금년 날짜'로 옮겨오기
+ly['pseudo_date'] = ly['진료일자'] + pd.DateOffset(years=1)
+
+# 비교용 컬럼 추가
+curr['year_group'] = '올해'
+ly  ['year_group'] = '전년'
+
+# 날짜 컬럼 통일
+curr['plot_date'] = curr['진료일자']
+ly  ['plot_date'] = ly['pseudo_date']
+
+# 합치기
+comp = pd.concat([curr[['plot_date','환자수','year_group', '진료일자']],
+                  ly  [['plot_date','환자수','year_group', '진료일자']]])
+
+# Altair로 라인 차트
+comp_chart = (
+    alt.Chart(comp)
+       .mark_line()
+       .encode(
+           x=alt.X('plot_date:T', title='진료일자'),
+           y=alt.Y('환자수:Q', title='내원수'),
+           color=alt.Color(
+               'year_group:N',
+               title='기간',
+               scale=alt.Scale(
+                   domain=['올해', '전년'],
+                   range=['#FFDC3C', '#A0AEC0']
+               )
+           ),
+           tooltip=[
+             alt.Tooltip('진료일자:T', title='날짜'),
+             alt.Tooltip('환자수:Q',   title='내원수')
+           ]
+       )
+        .properties(height=400)
+       .interactive()
+)
+
+comp_hover = (
+    alt.Chart(comp)
+       .mark_point(size=200, opacity=0)
+       .encode(
+           x='plot_date:T',
+           y='환자수:Q',
+           tooltip=[
+               alt.Tooltip('진료일자:T', title='날짜'),
+               alt.Tooltip('환자수:Q', title='내원수')
+           ]
+       )
+)
+
+final_comp_chart = (comp_chart + comp_hover)
+# st.altair_chart(comp_chart, use_container_width=True)
+
+# 두 차트를 같은 행에 배치
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("일별 내원 추이")
+    st.altair_chart(final_chart, use_container_width=True)
+
+with col2:
+    st.subheader("전년 동기 내원 추이 비교")
+    st.altair_chart(final_comp_chart, use_container_width=True)
+
+# 7) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
 filtered['요일'] = filtered['진료일자'].dt.day_name()
 heat = filtered.groupby(['요일', '진료시간대']).size().reset_index(name='count')
 heat_chart = alt.Chart(heat).mark_rect().encode(
     x=alt.X('진료시간대:O', title="시간대", axis=alt.Axis(labelAngle=0)),
     y=alt.Y('요일:O', sort=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']),
-    color=alt.Color('count:Q', scale=alt.Scale(scheme='blues'), title='환자 수')
+    color=alt.Color('count:Q', scale=alt.Scale(scheme='blues'), title='내원수')
 )
 st.altair_chart(heat_chart, use_container_width=True)
 
