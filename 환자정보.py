@@ -120,8 +120,8 @@ trend_chart = (
     alt.Chart(melted)
        .mark_line()
        .encode(
-           x='진료일자:T',
-           y='값:Q',
+           x=alt.X('진료일자:T', title='진료일자'),
+           y=alt.Y('값:Q',     title='진료횟수'),
            color=alt.Color(
                '지표:N',
                scale=alt.Scale(
@@ -147,9 +147,11 @@ daily_hover = (
        .transform_filter(alt.datum.지표=='환자수')
        .encode(
             x='진료일자:T', y='값:Q',
-            tooltip=['진료일자:T','값:Q']
+            tooltip=[
+                alt.Tooltip('진료일자:T', title='날짜'),
+                alt.Tooltip('값:Q',        title='내원수')
+            ]
         )
-        .properties(height=400)
 )
 
 trend_hover = (
@@ -158,16 +160,18 @@ trend_hover = (
        .transform_filter(alt.datum.지표!='환자수')
        .encode(
             x='진료일자:T', y='값:Q',
-            tooltip=['진료일자:T','지표:N','값:Q']
+            tooltip=[
+                alt.Tooltip('진료일자:T', title='날짜'),
+                alt.Tooltip('지표:N',      title='지표'),
+                alt.Tooltip('값:Q',        title='내원수')
+            ]
         )
-        .properties(height=400)
 )
 
 final_chart = (
     alt.layer(trend_chart, daily_hover, trend_hover)
        .resolve_scale(y='shared')
        .properties(
-           title="일별 내원 추이",
            width='container',
            autosize={'type':'fit-x','contains':'padding'}
        )
@@ -182,8 +186,6 @@ daily2 = (
     .reset_index(name='환자수')
     .sort_values('진료일자')
 )
-
-st.subheader("전년 동기 내원 추이 비교")
 
 # 기준 기간 정의
 start = pd.to_datetime(start_date)
@@ -201,8 +203,8 @@ ly   = daily2[(daily2['진료일자'] >= ly_start) & (daily2['진료일자'] <= 
 ly['pseudo_date'] = ly['진료일자'] + pd.DateOffset(years=1)
 
 # 비교용 컬럼 추가
-curr['year_group'] = '올해'
-ly  ['year_group'] = '전년'
+curr['year_group'] = '조회 기간'
+ly  ['year_group'] = '전년 동기'
 
 # 날짜 컬럼 통일
 curr['plot_date'] = curr['진료일자']
@@ -212,56 +214,100 @@ ly  ['plot_date'] = ly['pseudo_date']
 comp = pd.concat([curr[['plot_date','환자수','year_group', '진료일자']],
                   ly  [['plot_date','환자수','year_group', '진료일자']]])
 
-# Altair로 라인 차트
-comp_chart = (
+comp_area = (
     alt.Chart(comp)
-       .mark_line()
-       .encode(
-           x=alt.X('plot_date:T', title='진료일자'),
-           y=alt.Y('환자수:Q', title='진료횟수'),
-           color=alt.Color(
-               'year_group:N',
-               title='기간',
-               scale=alt.Scale(
-                   domain=['올해', '전년'],
-                   range=['#FFDC3C', '#A0AEC0']
-               )
-           ),
-           tooltip=[
-             alt.Tooltip('진료일자:T', title='날짜'),
-             alt.Tooltip('환자수:Q',   title='내원수')
-           ]
-       )
-        .properties(height=400)
-       .interactive()
+      .mark_area(interpolate='monotone', opacity=0.4)
+      .encode(
+          x=alt.X('plot_date:T', title='진료일자'),
+          y=alt.Y('환자수:Q', title='진료횟수', stack=None),
+          color=alt.Color('year_group:N', title='기간',
+                          scale=alt.Scale(domain=['조회 기간','전년 동기'],
+                                          range=['#FFDC3C','#A0AEC0'])),
+          tooltip=[
+            alt.Tooltip('진료일자:T', title='날짜'),
+            alt.Tooltip('환자수:Q',   title='내원수'),
+            alt.Tooltip('year_group:N', title='기간')
+          ]
+      )
+      .properties(height=400)
+      .interactive()
 )
 
+# 필요하다면 투명 포인트로 hover 레이어 추가
 comp_hover = (
     alt.Chart(comp)
-       .mark_point(size=200, opacity=0)
-       .encode(
-           x='plot_date:T',
-           y='환자수:Q',
-           tooltip=[
-               alt.Tooltip('진료일자:T', title='날짜'),
-               alt.Tooltip('환자수:Q', title='내원수')
-           ]
-       )
+      .mark_point(size=200, opacity=0)
+      .encode(
+          x='plot_date:T', y='환자수:Q',
+          tooltip=[
+            alt.Tooltip('진료일자:T', title='날짜'),
+            alt.Tooltip('환자수:Q', title='내원수'),
+            alt.Tooltip('year_group:N', title='기간')
+          ]
+      )
 )
 
-final_comp_chart = (comp_chart + comp_hover)
-st.altair_chart(comp_chart, use_container_width=True)
+final_comp_chart = comp_area + comp_hover
+
+# st.subheader("전년 동기 내원 추이 비교")
+# #st.altair_chart(final_comp_chart, use_container_width=True)
+
+# 1) 선택 기간 월별 집계
+curr_monthly = (
+    filtered
+    .groupby(pd.Grouper(key='진료일자', freq='M'))
+    .size()
+    .reset_index(name='환자수')
+)
+# 2) 전년 동기 월별 집계
+ly_filtered = df[
+    (df['진료일자'] >= (pd.to_datetime(start_date) - pd.DateOffset(years=1))) &
+    (df['진료일자'] <= (pd.to_datetime(end_date)   - pd.DateOffset(years=1)))
+]
+ly_monthly = (
+    ly_filtered
+    .groupby(pd.Grouper(key='진료일자', freq='M'))
+    .size()
+    .reset_index(name='환자수')
+)
+# 3) 날짜를 비교하기 쉽게 연동
+ly_monthly['진료일자'] = ly_monthly['진료일자'] + pd.DateOffset(years=1)
+# 4) growth_rate 계산
+monthly = curr_monthly.merge(
+    ly_monthly.rename(columns={'환자수':'ly_환자수'}),
+    on='진료일자', how='left'
+)
+monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
+
+month_bar = (
+    alt.Chart(monthly)
+      .mark_bar()
+      .encode(
+          x=alt.X('yearmonth(진료일자):O', title='월'),
+          y=alt.Y('growth_rate:Q', title='월간 성장률', axis=alt.Axis(format='.1%')),
+          tooltip=[
+            alt.Tooltip('yearmonth(진료일자):T', title='월'),
+            alt.Tooltip('growth_rate:Q',       title='성장률', format='.1%'),
+            alt.Tooltip('환자수:Q',             title='이번 년 환자수'),
+            alt.Tooltip('ly_환자수:Q',          title='전년 동기 환자수')
+          ]
+      )
+      .properties(height=300, width={'step':60})
+)
+
+# st.subheader("월간 성장률")
+# st.altair_chart(month_bar, use_container_width=True)
 
 # 두 차트를 같은 행에 배치
-# col1, col2 = st.columns(2)
-#
-# with col1:
-#     st.subheader("일별 내원 추이")
-#     st.altair_chart(final_chart, use_container_width=True)
-#
-# with col2:
-#     st.subheader("전년 동기 내원 추이 비교")
-#     st.altair_chart(final_comp_chart, use_container_width=True)
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("전년 동기 내원 추이 비교")
+    st.altair_chart(final_comp_chart, use_container_width=True)
+
+with col2:
+    st.subheader("월간 성장률")
+    st.altair_chart(month_bar, use_container_width=True)
 
 # 7) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
