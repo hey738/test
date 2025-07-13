@@ -311,7 +311,8 @@ label_rate = (
           align='center',
           baseline='bottom',
           fontWeight='bold',
-          fontSize=16
+          fontSize=16,
+          color='white'
       )
       .encode(
           x='yearmonth(진료일자):O',
