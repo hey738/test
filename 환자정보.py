@@ -302,7 +302,7 @@ label = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .transform_calculate(
-          label="format(datum.growth_rate, '.1%') + '\\n' + "
+          label="format(datum.growth_rate, '.1%') + '\n' + "
                 "format(datum.환자수, ',') + '명/' + "
                 "format(datum.ly_환자수, ',') + '명'"
       )
