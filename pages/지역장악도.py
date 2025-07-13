@@ -312,7 +312,15 @@ label_count = (
       )
 )
 
-final = bar + label_rate + label_count
+final = (
+    alt.layer(bar, label_rate, label_count)
+       .resolve_scale(y='shared')
+       .properties(
+           width='container',
+           height=400,
+           padding={"bottom": 40}   # ← 여기
+       )
+)
 st.altair_chart(final, use_container_width=True)
 
 # 1) 전치 & 컬럼 순서 재배치
