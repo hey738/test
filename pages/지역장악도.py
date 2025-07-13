@@ -274,32 +274,46 @@ bar = (
        .properties(height=400)
 )
 
-label = (
+# 2) 퍼센트 레이블 (막대 위에)
+label_rate = (
     alt.Chart(agg_df)
-        .transform_calculate(
-          display='''
-          format(datum["장악도(%)"], ".4f") + "%" + "\\n" +
-          format(datum["환자수"], ",") + "명 / " +
-          format(datum["인구수"], ",") + "명"
-          '''
-         )
-       .mark_text(
-           align='center',    # 수평 중앙 정렬
-           baseline='middle', # 수직 중앙 정렬
-           dy=-20,
-           fontWeight='bold',
-           lineBreak='\\n'
-       )
-       .encode(
-           x=alt.X('연령대:O', sort=custom_order),
-           y=alt.Y('장악도(%):Q'),
-           text=alt.Text('display:N')
-       )
+      .mark_text(
+        dy=-10,           # 막대 위쪽으로 띄우기
+        fontWeight='bold',
+        align='center',
+        baseline='bottom'
+      )
+      .encode(
+        x=alt.X('연령대:O', sort=custom_order),
+        y=alt.Y('장악도(%):Q'),
+        text=alt.Text('장악도(%):Q', format='.4f%')
+      )
 )
 
-final_bar = bar + label
+# 3) 환자수/인구수 레이블 (퍼센트 레이블 바로 아래)
+#    transform_calculate 로 문자열 합성
+label_count = (
+    alt.Chart(agg_df)
+      .transform_calculate(
+        count_label=(
+          "format(datum.환자수, ',') + '명 / ' + format(datum.인구수, ',') + '명'"
+        )
+      )
+      .mark_text(
+        dy=2,             # 퍼센트 레이블 바로 아래
+        fontWeight='bold',
+        align='center',
+        baseline='top'
+      )
+      .encode(
+        x=alt.X('연령대:O', sort=custom_order),
+        y=alt.Y('장악도(%):Q'),
+        text='count_label:N'
+      )
+)
 
-st.altair_chart(final_bar, use_container_width=True)
+final = bar + label_rate + label_count
+st.altair_chart(final, use_container_width=True)
 
 # 1) 전치 & 컬럼 순서 재배치
 df_t = agg_df.set_index('연령대').T[custom_order].copy()
