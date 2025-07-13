@@ -281,21 +281,18 @@ bar = (
 )
 
 # 2) 퍼센트 레이블 (막대 위에)
-label = (
+label_rate = (
     alt.Chart(agg_df)
       .transform_calculate(
         display="""
-          format(datum["장악도(%)"], ".4f") + "%" + "\\n" +
-          format(datum["환자수"], ",") + "명 / " +
-          format(datum["인구수"], ",") + "명"
+          format(datum["장악도(%)"], ".4f") + "%"
         """
       )
       .mark_text(
         align='center',
         baseline='middle',
         dy=-20,
-        fontWeight='bold',
-        lineBreak='\\n'
+        fontWeight='bold'
       )
       .encode(
         x=alt.X('연령대:O', sort=custom_order),
@@ -304,7 +301,28 @@ label = (
       )
 )
 
-final = bar + label
+# 3) 환자수/인구수 레이블 (퍼센트 레이블 바로 아래)
+label_count = (
+    alt.Chart(agg_df)
+      .transform_calculate(
+        display="""
+          format(datum["환자수"], ",") + ' / ' + format(datum["인구수"], ",")
+        """
+      )
+      .mark_text(
+         dy=2,                # 퍼센트 레이블에서 2px 아래
+         fontWeight='bold',
+         align='center',
+         baseline='top'
+      )
+      .encode(
+         x=alt.X('연령대:O', sort=custom_order),
+         y=alt.Y('장악도(%):Q'),
+         text=alt.Text('count_label:N')  
+      )
+)
+
+final = bar + label_rate + label_count
 st.altair_chart(final, use_container_width=True)
 
 # 1) 전치 & 컬럼 순서 재배치
