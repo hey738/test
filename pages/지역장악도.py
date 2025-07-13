@@ -283,7 +283,8 @@ label = (
        .mark_text(
            align='center',    # 수평 중앙 정렬
            baseline='middle', # 수직 중앙 정렬
-           dy=10               # y 오프셋 없음 (막대 중앙)
+           dy=10,
+           fontWeight='bold'
        )
        .encode(
            x=alt.X('연령대:O', sort=custom_order),
