@@ -279,8 +279,8 @@ monthly = curr_monthly.merge(
 )
 monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
 monthly['count_label'] = (
-    monthly['환자수'].map(lambda x: f"{x:,}명") + "/" +
-    monthly['ly_환자수'].map(lambda x: f"{x:,}명")
+    monthly['ly_환자수'].map(lambda x: f"{x:,}명") + "->\\n" +
+    monthly['환자수'].map(lambda x: f"{x:,}명")
 )
 
 # 5) 월간 성장률 차트
@@ -307,7 +307,7 @@ label_rate = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=0,              # 막대 꼭대기 위로 약간 띄움
+          dy=-10,              # 막대 꼭대기 위로 약간 띄움
           align='center',
           baseline='bottom',
           fontWeight='bold'
@@ -324,7 +324,7 @@ label_count = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=0,               # growth_rate 레이블 바로 아래
+          dy=-10,               # growth_rate 레이블 바로 아래
           align='center',
           baseline='top',
           fontWeight='bold'
