@@ -330,7 +330,7 @@ label_count = (
           baseline='top',
           fontWeight='bold',
           lineBreak='\\n',
-          fontSize=16
+          fontSize=14
       )
       .encode(
           x='yearmonth(진료일자):O',
