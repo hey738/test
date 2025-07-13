@@ -304,7 +304,8 @@ label_count = (
         dy=-20,
         align='center',
         baseline='top',
-        fontWeight='bold'
+        fontWeight='bold',
+        lineBreak='\\n'
       )
       .encode(
         x=alt.X('연령대:O', sort=custom_order),
