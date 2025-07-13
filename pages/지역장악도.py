@@ -306,11 +306,12 @@ label_count = (
     alt.Chart(agg_df)
       .transform_calculate(
         display="""
-          format(datum["환자수"], ",") + ' / ' + format(datum["인구수"], ",")
+          format(datum["환자수"], ",") + '명 / ' +
+          format(datum["인구수"], ",") + '명'
         """
       )
       .mark_text(
-         dy=2,                # 퍼센트 레이블에서 2px 아래
+         dy=-10,                # 퍼센트 레이블에서 2px 아래
          fontWeight='bold',
          align='center',
          baseline='top'
