@@ -285,7 +285,7 @@ label_rate = (
       .mark_text(
         align='center',
         baseline='middle',
-        dy=-20,
+        dy=-30,
         fontWeight='bold',
         fontSize=16
       )
@@ -306,10 +306,11 @@ label_count = (
         """
       )
       .mark_text(
-         dy=-12,                # 퍼센트 레이블에서 2px 아래
+         dy=-15,                # 퍼센트 레이블에서 2px 아래
          fontWeight='bold',
          align='center',
-         baseline='top'
+         baseline='top',
+          fontSize=14
       )
       .encode(
          x=alt.X('연령대:O', sort=custom_order),
