@@ -307,7 +307,7 @@ label_rate = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=-10,              # 막대 꼭대기 위로 약간 띄움
+          dy=-50,              # 막대 꼭대기 위로 약간 띄움
           align='center',
           baseline='bottom',
           fontWeight='bold',
@@ -325,7 +325,7 @@ label_count = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=-70,               # growth_rate 레이블 바로 아래
+          dy=-30,               # growth_rate 레이블 바로 아래
           align='center',
           baseline='top',
           fontWeight='bold',
