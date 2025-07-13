@@ -157,15 +157,6 @@ with st.sidebar.expander("활성 환자 기간", expanded=True):
 #     dong_idx = dongs.index(default_dong) if default_dong in dongs else 0
 #     dong = st.selectbox("행정동", dongs, index=dong_idx)
 
-# # --- 활성 환자 필터링 & 집계 ---
-# active = patient_df[patient_df['진료일자'] >= cutoff].copy()
-# grouped = (
-#     active
-#     .groupby(['시/도','시/군/구','행정동','연령대'])['환자번호']
-#     .nunique()
-#     .reset_index(name='환자수')
-# )
-
 with st.sidebar.expander("지역 선택", expanded=True):
     provinces = ["전체"] + sorted(pop_df['시/도'].unique())
     province = st.selectbox("시/도", provinces, index=0)
@@ -183,6 +174,15 @@ with st.sidebar.expander("지역 선택", expanded=True):
             pop_df[(pop_df['시/도']==province)&(pop_df['시/군/구']==city)]['행정동'].unique()
         )
     dong = st.selectbox("행정동", dongs)
+
+# --- 활성 환자 필터링 & 집계 ---
+active = patient_df[patient_df['진료일자'] >= cutoff].copy()
+grouped = (
+    active
+    .groupby(['시/도','시/군/구','행정동','연령대'])['환자번호']
+    .nunique()
+    .reset_index(name='환자수')
+)
 
 # --- 인구 대비 장악도 계산 ---
 # age_cols를 라벨 패턴으로 뽑기 (9세이하 포함)
