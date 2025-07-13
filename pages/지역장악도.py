@@ -306,7 +306,7 @@ label_count = (
         """
       )
       .mark_text(
-         dy=-15,                # 퍼센트 레이블에서 2px 아래
+         dy=-20,                # 퍼센트 레이블에서 2px 아래
          fontWeight='bold',
          align='center',
          baseline='top',
