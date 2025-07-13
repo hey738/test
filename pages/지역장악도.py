@@ -318,7 +318,7 @@ label_count = (
       .encode(
          x=alt.X('연령대:O', sort=custom_order),
          y=alt.Y('장악도(%):Q'),
-         text=alt.Text('displaydisplay:N')  
+         text=alt.Text('display:N')  
       )
 )
 
