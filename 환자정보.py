@@ -278,47 +278,64 @@ monthly = curr_monthly.merge(
     on='진료일자', how='left'
 )
 monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
+monthly['count_label'] = (
+    monthly['환자수'].map(lambda x: f"{x:,}명") + "/" +
+    monthly['ly_환자수'].map(lambda x: f"{x:,}명")
+)
 
-# 5) 월간 성장률 차트 — growth_rate null인 경우 필터링
+# 5) 월간 성장률 차트
+# 1) 막대 차트
 month_bar = (
     alt.Chart(monthly)
-      .transform_filter(alt.datum.growth_rate != None)   # growth_rate null 제외
+      .transform_filter(alt.datum.growth_rate != None)
       .mark_bar()
       .encode(
           x=alt.X('yearmonth(진료일자):O', title='월'),
-          y=alt.Y('growth_rate:Q', title='월간 성장률', axis=alt.Axis(format='.1%')),
+          y=alt.Y('growth_rate:Q', axis=alt.Axis(format='.1%')),
           tooltip=[
-            alt.Tooltip('yearmonth(진료일자):T', title='월'),
-            alt.Tooltip('growth_rate:Q',       title='성장률', format='.1%'),
-            alt.Tooltip('환자수:Q',             title='이번 년 환자수'),
-            alt.Tooltip('ly_환자수:Q',          title='전년 동기 환자수')
+             alt.Tooltip('yearmonth(진료일자):T', title='월'),
+             alt.Tooltip('growth_rate:Q',       title='성장률', format='.1%'),
+             alt.Tooltip('환자수:Q',             title='이번 년 환자수'),
+             alt.Tooltip('ly_환자수:Q',          title='전년 동기 환자수')
           ]
       )
       .properties(height=300, width={'step':60})
 )
 
-# growth_rate 레이블 텍스트 레이어
-label = (
+# 2) growth_rate 레이블 (막대 위쪽)
+label_rate = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
-      .transform_calculate(
-          label="format(datum.growth_rate, '.1%') + '\n' + "
-                "format(datum.환자수, ',') + '명/' + "
-                "format(datum.ly_환자수, ',') + '명'"
-      )
       .mark_text(
-          dy=10,                # y 오프셋 없음
-          align='center',      # 중앙 정렬
-          baseline='middle',   # 수직 중앙
+          dy=-10,              # 막대 꼭대기 위로 약간 띄움
+          align='center',
+          baseline='bottom'
       )
       .encode(
-          x=alt.X('yearmonth(진료일자):O'),
-          y=alt.Y('growth_rate:Q'),                       # 막대 높이와 동일한 y
-          text=alt.Text('label:N')
+          x='yearmonth(진료일자):O',
+          y='growth_rate:Q',
+          text=alt.Text('growth_rate:Q', format='.1%')
       )
 )
+
+# 3) 환자수/전년환자수 레이블 (막대 바로 위나 아래)
+label_count = (
+    alt.Chart(monthly)
+      .transform_filter(alt.datum.growth_rate != None)
+      .mark_text(
+          dy=10,               # growth_rate 레이블 바로 아래
+          align='center',
+          baseline='top'
+      )
+      .encode(
+          x='yearmonth(진료일자):O',
+          y='growth_rate:Q',
+          text='count_label:N'
+      )
+)
+
 # 막대 + 레이블 합성
-final_month_bar = month_bar + label
+final_month_bar = month_bar + label_rate + label_count
 
 # st.subheader("월간 성장률")
 # st.altair_chart(month_bar, use_container_width=True)
