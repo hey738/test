@@ -1,5 +1,6 @@
 [server]
 fileWatcherType = "none"
+runOnSave        = false
 
 [theme]
 primaryColor = "#0072C3"
