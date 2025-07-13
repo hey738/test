@@ -279,8 +279,10 @@ monthly = curr_monthly.merge(
 )
 monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
 
+# 5) 월간 성장률 차트 — growth_rate null인 경우 필터링
 month_bar = (
     alt.Chart(monthly)
+      .transform_filter(alt.datum.growth_rate != None)   # growth_rate null 제외
       .mark_bar()
       .encode(
           x=alt.X('yearmonth(진료일자):O', title='월'),
@@ -295,6 +297,25 @@ month_bar = (
       .properties(height=300, width={'step':60})
 )
 
+# growth_rate 레이블 텍스트 레이어
+label = (
+    alt.Chart(monthly)
+      .transform_filter(alt.datum.growth_rate != None)
+      .mark_text(
+          dy=10,                # y 오프셋 없음
+          align='center',      # 중앙 정렬
+          baseline='middle',   # 수직 중앙
+          color='black'
+      )
+      .encode(
+          x=alt.X('yearmonth(진료일자):O'),
+          y=alt.Y('growth_rate:Q'),                       # 막대 높이와 동일한 y
+          text=alt.Text('growth_rate:Q', format='.1%')
+      )
+)
+# 막대 + 레이블 합성
+final_month_bar = month_bar + label
+
 # st.subheader("월간 성장률")
 # st.altair_chart(month_bar, use_container_width=True)
 
@@ -307,7 +328,7 @@ with col1:
 
 with col2:
     st.subheader("월간 성장률")
-    st.altair_chart(month_bar, use_container_width=True)
+    st.altair_chart(final_month_bar, use_container_width=True)
 
 # 7) 요일×시간대 히트맵
 st.subheader("요일×시간대 내원 패턴")
