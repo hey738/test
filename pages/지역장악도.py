@@ -278,15 +278,17 @@ label = (
     alt.Chart(agg_df)
         .transform_calculate(
           display='''
-          format(datum["장악도(%)"], ".4f") + "%\\n" +
-          format(datum["환자수"]) + " / " + format(datum["인구수"])
+          format(datum["장악도(%)"], ".4f") + "%" + "\\n" +
+          format(datum["환자수"], ",") + "명 / " +
+          format(datum["인구수"], ",") + "명"
           '''
          )
        .mark_text(
            align='center',    # 수평 중앙 정렬
            baseline='middle', # 수직 중앙 정렬
            dy=-20,
-           fontWeight='bold'
+           fontWeight='bold',
+           lineBreak='\\n'
        )
        .encode(
            x=alt.X('연령대:O', sort=custom_order),
