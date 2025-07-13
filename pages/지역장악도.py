@@ -126,22 +126,36 @@ with st.sidebar.expander("활성 환자 기간", expanded=True):
     st.write(f"{cutoff.date()} 이후")
 
 with st.sidebar.expander("지역 선택", expanded=True):
+    # 1) 시/도
     provinces = ["전체"] + sorted(pop_df['시/도'].unique())
-    province = st.selectbox("시/도", provinces, index=0)
+    default_province = "경기도"
+    province_idx = provinces.index(default_province) if default_province in provinces else 0
+    province = st.selectbox("시/도", provinces, index=province_idx)
+
+    # 2) 시/군/구
     if province == "전체":
         cities = ["전체"]
     else:
         cities = ["전체"] + sorted(
             pop_df[pop_df['시/도']==province]['시/군/구'].unique()
         )
-    city = st.selectbox("시/군/구", cities)
+    default_city = "시흥시"
+    city_idx = cities.index(default_city) if default_city in cities else 0
+    city = st.selectbox("시/군/구", cities, index=city_idx)
+
+    # 3) 행정동
     if province == "전체" or city == "전체":
         dongs = ["전체"]
     else:
         dongs = ["전체"] + sorted(
-            pop_df[(pop_df['시/도']==province)&(pop_df['시/군/구']==city)]['행정동'].unique()
+            pop_df[
+                (pop_df['시/도']==province)&
+                (pop_df['시/군/구']==city)
+            ]['행정동'].unique()
         )
-    dong = st.selectbox("행정동", dongs)
+    default_dong = "월곶동"
+    dong_idx = dongs.index(default_dong) if default_dong in dongs else 0
+    dong = st.selectbox("행정동", dongs, index=dong_idx)
 
 # --- 활성 환자 필터링 & 집계 ---
 active = patient_df[patient_df['진료일자'] >= cutoff].copy()
