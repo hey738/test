@@ -242,12 +242,6 @@ agg_df = (
 )
 agg_df['장악도(%)'] = (agg_df['환자수']/agg_df['인구수']*100).round(4)
 
-agg_df['count_label'] = (
-    agg_df['환자수'].map(lambda x: f"{x:,}명") +
-    " / " +
-    agg_df['인구수'].map(lambda x: f"{x:,}명")
-)
-
 custom_order = [
     "9세이하", "10대", "20대", "30대", "40대",
     "50대", "60대", "70대", "80대", "90대", "100세이상"
