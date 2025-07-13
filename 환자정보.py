@@ -301,16 +301,21 @@ month_bar = (
 label = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
+      .transform_calculate(
+          label="""
+            format(datum.growth_rate, '.1%') + '  
+            ' + format(datum.환자수, ',') + '명/' + format(datum.ly_환자수, ',') + '명'
+          """
+      )
       .mark_text(
           dy=10,                # y 오프셋 없음
           align='center',      # 중앙 정렬
           baseline='middle',   # 수직 중앙
-          color='black'
       )
       .encode(
           x=alt.X('yearmonth(진료일자):O'),
           y=alt.Y('growth_rate:Q'),                       # 막대 높이와 동일한 y
-          text=alt.Text('growth_rate:Q', format='.1%')
+          text=alt.Text('label:N')
       )
 )
 # 막대 + 레이블 합성
