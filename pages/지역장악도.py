@@ -279,7 +279,7 @@ label = (
         .transform_calculate(
           display='''
           format(datum["장악도(%)"], ".4f") + "%\\n" +
-          format(datum["환자수"], ".4f")
+          format(datum["환자수"]) + " / " + format(datum["인구수"])
           '''
          )
        .mark_text(
