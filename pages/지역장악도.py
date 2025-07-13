@@ -285,7 +285,7 @@ label_rate = (
       .mark_text(
         align='center',
         baseline='middle',
-        dy=-37,
+        dy=-40,
         fontWeight='bold',
         fontSize=16
       )
@@ -306,7 +306,7 @@ label_count = (
         """
       )
       .mark_text(
-         dy=-22,                # 퍼센트 레이블에서 2px 아래
+         dy=-25,                # 퍼센트 레이블에서 2px 아래
          fontWeight='bold',
          align='center',
          baseline='top',
