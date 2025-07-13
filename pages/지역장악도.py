@@ -125,46 +125,64 @@ with st.sidebar.expander("활성 환자 기간", expanded=True):
     cutoff = datetime.now() - timedelta(days=30*months)
     st.write(f"{cutoff.date()} 이후")
 
-with st.sidebar.expander("지역 선택", expanded=True):
-    # 1) 시/도
-    provinces = ["전체"] + sorted(pop_df['시/도'].unique())
-    default_province = "경기도"
-    province_idx = provinces.index(default_province) if default_province in provinces else 0
-    province = st.selectbox("시/도", provinces, index=province_idx)
+# with st.sidebar.expander("지역 선택", expanded=True):
+#     # 1) 시/도
+#     provinces = ["전체"] + sorted(pop_df['시/도'].unique())
+#     default_province = "경기도"
+#     province_idx = provinces.index(default_province) if default_province in provinces else 0
+#     province = st.selectbox("시/도", provinces, index=province_idx)
 
-    # 2) 시/군/구
+#     # 2) 시/군/구
+#     if province == "전체":
+#         cities = ["전체"]
+#     else:
+#         cities = ["전체"] + sorted(
+#             pop_df[pop_df['시/도']==province]['시/군/구'].unique()
+#         )
+#     default_city = "시흥시"
+#     city_idx = cities.index(default_city) if default_city in cities else 0
+#     city = st.selectbox("시/군/구", cities, index=city_idx)
+
+#     # 3) 행정동
+#     if province == "전체" or city == "전체":
+#         dongs = ["전체"]
+#     else:
+#         dongs = ["전체"] + sorted(
+#             pop_df[
+#                 (pop_df['시/도']==province)&
+#                 (pop_df['시/군/구']==city)
+#             ]['행정동'].unique()
+#         )
+#     default_dong = "월곶동"
+#     dong_idx = dongs.index(default_dong) if default_dong in dongs else 0
+#     dong = st.selectbox("행정동", dongs, index=dong_idx)
+
+# # --- 활성 환자 필터링 & 집계 ---
+# active = patient_df[patient_df['진료일자'] >= cutoff].copy()
+# grouped = (
+#     active
+#     .groupby(['시/도','시/군/구','행정동','연령대'])['환자번호']
+#     .nunique()
+#     .reset_index(name='환자수')
+# )
+
+with st.sidebar.expander("지역 선택", expanded=True):
+    provinces = ["전체"] + sorted(pop_df['시/도'].unique())
+    province = st.selectbox("시/도", provinces, index=0)
     if province == "전체":
         cities = ["전체"]
     else:
         cities = ["전체"] + sorted(
             pop_df[pop_df['시/도']==province]['시/군/구'].unique()
         )
-    default_city = "시흥시"
-    city_idx = cities.index(default_city) if default_city in cities else 0
-    city = st.selectbox("시/군/구", cities, index=city_idx)
-
-    # 3) 행정동
+    city = st.selectbox("시/군/구", cities)
     if province == "전체" or city == "전체":
         dongs = ["전체"]
     else:
         dongs = ["전체"] + sorted(
-            pop_df[
-                (pop_df['시/도']==province)&
-                (pop_df['시/군/구']==city)
-            ]['행정동'].unique()
+            pop_df[(pop_df['시/도']==province)&(pop_df['시/군/구']==city)]['행정동'].unique()
         )
-    default_dong = "월곶동"
-    dong_idx = dongs.index(default_dong) if default_dong in dongs else 0
-    dong = st.selectbox("행정동", dongs, index=dong_idx)
-
-# --- 활성 환자 필터링 & 집계 ---
-active = patient_df[patient_df['진료일자'] >= cutoff].copy()
-grouped = (
-    active
-    .groupby(['시/도','시/군/구','행정동','연령대'])['환자번호']
-    .nunique()
-    .reset_index(name='환자수')
-)
+    dong = st.selectbox("행정동", dongs)
 
 # --- 인구 대비 장악도 계산 ---
 # age_cols를 라벨 패턴으로 뽑기 (9세이하 포함)
