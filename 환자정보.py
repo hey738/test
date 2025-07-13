@@ -310,7 +310,8 @@ label_rate = (
           dy=-30,              # 막대 꼭대기 위로 약간 띄움
           align='center',
           baseline='bottom',
-          fontWeight='bold'
+          fontWeight='bold',
+          fontSize=16
       )
       .encode(
           x='yearmonth(진료일자):O',
