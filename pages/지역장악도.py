@@ -283,7 +283,7 @@ label = (
        .mark_text(
            align='center',    # 수평 중앙 정렬
            baseline='middle', # 수직 중앙 정렬
-           dy=10,
+           dy=-20,
            fontWeight='bold'
        )
        .encode(
