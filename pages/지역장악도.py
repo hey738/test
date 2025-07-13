@@ -267,6 +267,13 @@ st.altair_chart(final_bar, use_container_width=True)
 # 1) 전치 & 컬럼 순서 재배치
 df_t = agg_df.set_index('연령대').T[custom_order].copy()
 
-# 2) '인구수' 행에만 천단위 콤마 적용
-df_t.loc['인구수'] = df_t.loc['인구수'].astype(int).map("{:,}".format)
-st.table(df_t)
+# 2) 각 행을 문자열로 포맷
+df_t.loc['인구수']     = df_t.loc['인구수'].astype(int).map("{:,}".format)
+df_t.loc['환자수']     = df_t.loc['환자수'].astype(int).map("{:,}".format)
+df_t.loc['장악도(%)']  = df_t.loc['장악도(%)'].map(lambda x: f"{x:.4f}%")
+
+# 3) 전체를 str 타입으로 강제 캐스팅
+df_t = df_t.astype(str)
+
+# 4) 데이터프레임 출력
+st.dataframe(df_t)
