@@ -286,7 +286,8 @@ label_rate = (
         align='center',
         baseline='middle',
         dy=-20,
-        fontWeight='bold'
+        fontWeight='bold',
+        fontSize=16
       )
       .encode(
         x=alt.X('연령대:O', sort=custom_order),
