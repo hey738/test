@@ -284,7 +284,7 @@ bar = (
 label_rate = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=-10,           # 막대 위쪽으로 띄우기
+        dy=-20,
         fontWeight='bold',
         align='center',
         baseline='bottom'
@@ -301,7 +301,7 @@ label_rate = (
 label_count = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=10,             # 퍼센트 레이블 바로 아래
+        dy=-20,
         align='center',
         baseline='top',
         fontWeight='bold'
@@ -309,7 +309,7 @@ label_count = (
       .encode(
         x=alt.X('연령대:O', sort=custom_order),
         y=alt.Y('장악도(%):Q'),
-        text=alt.Text('count_label:N')   # 미리 만든 문자열 컬럼 사용
+        text=alt.Text('count_label:N')
       )
 )
 
