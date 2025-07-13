@@ -284,7 +284,7 @@ bar = (
 label_rate = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=-20,
+        dy=0,
         fontWeight='bold',
         align='center',
         baseline='bottom'
@@ -301,7 +301,7 @@ label_rate = (
 label_count = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=-20,
+        dy=2,
         align='center',
         baseline='top',
         fontWeight='bold'
