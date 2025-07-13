@@ -279,7 +279,7 @@ monthly = curr_monthly.merge(
 )
 monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
 monthly['count_label'] = (
-    monthly['ly_환자수'].map(lambda x: f"{x:,}명") + "\\n->" +
+    monthly['ly_환자수'].map(lambda x: f"{x:,}명") + "\\n-> " +
     monthly['환자수'].map(lambda x: f"{x:,}명")
 )
 
