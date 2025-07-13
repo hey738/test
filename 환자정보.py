@@ -278,6 +278,10 @@ monthly = curr_monthly.merge(
     on='진료일자', how='left'
 )
 monthly['growth_rate'] = (monthly['환자수'] - monthly['ly_환자수']) / monthly['ly_환자수']
+
+# NaN을 0으로 채우고 int로 변환
+monthly['ly_환자수'] = monthly['ly_환자수'].fillna(0).astype(int)
+
 monthly['count_label'] = (
     monthly['ly_환자수'].map(lambda x: f"{x:,}명") + "\\n-> " +
     monthly['환자수'].map(lambda x: f"{x:,}명")
