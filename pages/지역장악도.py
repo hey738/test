@@ -244,6 +244,10 @@ bar = (
 
 label = (
     alt.Chart(agg_df)
+        .transform_calculate(
+          display='format(datum["장악도(%)"], ".4f") + "%"'
+          # 소수 둘째 자리까지 포맷한 뒤, 문자열로 '%' 추가
+         )
        .mark_text(
            align='center',    # 수평 중앙 정렬
            baseline='middle', # 수직 중앙 정렬
@@ -252,7 +256,7 @@ label = (
        .encode(
            x=alt.X('연령대:O', sort=custom_order),
            y=alt.Y('장악도(%):Q'),
-           text=alt.Text('장악도(%):Q', format='.4f')
+           text=alt.Text('display:N')
        )
 )
 
