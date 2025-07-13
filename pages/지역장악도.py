@@ -126,57 +126,22 @@ with st.sidebar.expander("활성 환자 기간", expanded=True):
     st.write(f"{cutoff.date()} 이후")
 
 with st.sidebar.expander("지역 선택", expanded=True):
-    # --- 1) 시도(selectbox) ---
     provinces = ["전체"] + sorted(pop_df['시/도'].unique())
-    # 세션에 남아있는 값이 유효한지 확인
-    province_default = st.session_state.get('province', '전체')
-    if province_default not in provinces:
-        province_default = '전체'
-    province = st.selectbox(
-        "시/도",
-        provinces,
-        index=provinces.index(province_default),
-        key="province",
-        on_change=lambda: st.session_state.update(city="전체", dong="전체")
-    )
-
-    # --- 2) 시/군/구(selectbox) ---
+    province = st.selectbox("시/도", provinces, index=0)
     if province == "전체":
         cities = ["전체"]
     else:
         cities = ["전체"] + sorted(
-            pop_df[pop_df['시/도'] == province]['시/군/구'].unique()
+            pop_df[pop_df['시/도']==province]['시/군/구'].unique()
         )
-    city_default = st.session_state.get('city', '전체')
-    if city_default not in cities:
-        city_default = '전체'
-    city = st.selectbox(
-        "시/군/구",
-        cities,
-        index=cities.index(city_default),
-        key="city",
-        on_change=lambda: st.session_state.update(dong="전체")
-    )
-
-    # --- 3) 행정동(selectbox) ---
+    city = st.selectbox("시/군/구", cities)
     if province == "전체" or city == "전체":
         dongs = ["전체"]
     else:
         dongs = ["전체"] + sorted(
-            pop_df[
-                (pop_df['시/도'] == province) &
-                (pop_df['시/군/구'] == city)
-            ]['행정동'].unique()
+            pop_df[(pop_df['시/도']==province)&(pop_df['시/군/구']==city)]['행정동'].unique()
         )
-    dong_default = st.session_state.get('dong', '전체')
-    if dong_default not in dongs:
-        dong_default = '전체'
-    dong = st.selectbox(
-        "행정동",
-        dongs,
-        index=dongs.index(dong_default),
-        key="dong"
-    )
+    dong = st.selectbox("행정동", dongs)
 
 # --- 활성 환자 필터링 & 집계 ---
 active = patient_df[patient_df['진료일자'] >= cutoff].copy()
