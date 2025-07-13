@@ -285,7 +285,7 @@ label_rate = (
       .mark_text(
         align='center',
         baseline='middle',
-        dy=-40,
+        dy=-50,
         fontWeight='bold',
         fontSize=16
       )
