@@ -277,17 +277,18 @@ bar = (
                alt.Tooltip('장악도(%):Q', title='장악도(%)', format='.4f'),
            ]
        )
-       .properties(height=400)
+       .properties(height=400, width={'step':60})
 )
 
 # 2) 퍼센트 레이블 (막대 위에)
 label_rate = (
     alt.Chart(agg_df)
       .mark_text(
-         dy=-8,               # 막대 꼭대기 위로 8px
+         dy=0,               # 막대 꼭대기 위로 8px
          fontWeight='bold',
          align='center',
-         baseline='bottom'
+         baseline='bottom',
+          color='black'
       )
       .encode(
          x=alt.X('연령대:O', sort=custom_order),
@@ -300,7 +301,7 @@ label_rate = (
 label_count = (
     alt.Chart(agg_df)
       .mark_text(
-         dy=2,                # 퍼센트 레이블에서 2px 아래
+         dy=0,                # 퍼센트 레이블에서 2px 아래
          fontWeight='bold',
          align='center',
          baseline='top'
@@ -312,15 +313,7 @@ label_count = (
       )
 )
 
-final = (
-    alt.layer(bar, label_rate, label_count)
-       .resolve_scale(y='shared')
-       .properties(
-           width='container',
-           height=400,
-           padding={"bottom": 40}   # ← 여기
-       )
-)
+final = bar + label_rate #+ label_count
 st.altair_chart(final, use_container_width=True)
 
 # 1) 전치 & 컬럼 순서 재배치
