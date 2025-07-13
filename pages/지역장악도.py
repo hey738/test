@@ -314,7 +314,7 @@ label_count = (
       )
 )
 
-final = bar + label_rate #+ label_count
+final = bar + label_rate + label_count
 st.altair_chart(final, use_container_width=True)
 
 # 1) 전치 & 컬럼 순서 재배치
