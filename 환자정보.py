@@ -307,9 +307,10 @@ label_rate = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=-10,              # 막대 꼭대기 위로 약간 띄움
+          dy=0,              # 막대 꼭대기 위로 약간 띄움
           align='center',
-          baseline='bottom'
+          baseline='bottom',
+          fontWeight='bold'
       )
       .encode(
           x='yearmonth(진료일자):O',
@@ -323,9 +324,10 @@ label_count = (
     alt.Chart(monthly)
       .transform_filter(alt.datum.growth_rate != None)
       .mark_text(
-          dy=10,               # growth_rate 레이블 바로 아래
+          dy=0,               # growth_rate 레이블 바로 아래
           align='center',
-          baseline='top'
+          baseline='top',
+          fontWeight='bold'
       )
       .encode(
           x='yearmonth(진료일자):O',
