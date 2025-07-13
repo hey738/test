@@ -284,32 +284,31 @@ bar = (
 label_rate = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=0,
-        fontWeight='bold',
-        align='center',
-        baseline='bottom'
+         dy=-8,               # 막대 꼭대기 위로 8px
+         fontWeight='bold',
+         align='center',
+         baseline='bottom'
       )
       .encode(
-        x=alt.X('연령대:O', sort=custom_order),
-        y=alt.Y('장악도(%):Q'),
-        text=alt.Text('장악도(%):Q', format='.4f%')
+         x=alt.X('연령대:O', sort=custom_order),
+         y=alt.Y('장악도(%):Q'),
+         text=alt.Text('장악도(%):Q', format='.4f%')
       )
 )
 
 # 3) 환자수/인구수 레이블 (퍼센트 레이블 바로 아래)
-#    transform_calculate 로 문자열 합성
 label_count = (
     alt.Chart(agg_df)
       .mark_text(
-        dy=2,
-        align='center',
-        baseline='top',
-        fontWeight='bold'
+         dy=2,                # 퍼센트 레이블에서 2px 아래
+         fontWeight='bold',
+         align='center',
+         baseline='top'
       )
       .encode(
-        x=alt.X('연령대:O', sort=custom_order),
-        y=alt.Y('장악도(%):Q'),
-        text='count_label:N'
+         x=alt.X('연령대:O', sort=custom_order),
+         y=alt.Y('장악도(%):Q'),
+         text=alt.Text('count_label:N')  
       )
 )
 
