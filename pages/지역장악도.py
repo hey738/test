@@ -277,8 +277,10 @@ bar = (
 label = (
     alt.Chart(agg_df)
         .transform_calculate(
-          display='format(datum["장악도(%)"], ".4f") + "%"'
-          # 소수 둘째 자리까지 포맷한 뒤, 문자열로 '%' 추가
+          display='''
+          format(datum["장악도(%)"], ".4f") + "%\\n" +
+          format(datum["환자수"], ".4f")
+          '''
          )
        .mark_text(
            align='center',    # 수평 중앙 정렬
