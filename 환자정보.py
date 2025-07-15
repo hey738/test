@@ -37,8 +37,6 @@ def categorize_time(hms):
     hour = int(time_str[:2])
     return f"{hour:02d}"
 
-df['진료시간대'] = df['진료시간'].apply(categorize_time)
-
 bins = list(range(0, 101, 10)) + [999]
 labels = ["9세이하"] + [f"{i}대" for i in range(10, 100, 10)] + ["100세이상"]
 df['연령대'] = pd.cut(
@@ -70,6 +68,8 @@ filtered = df[
 ]
 if gender != "전체":
     filtered = filtered[filtered['성별'] == gender]
+
+filtered['진료시간대'] = df['진료시간'].apply(categorize_time)
 
 # 4) KPI 카드
 patients_in_period = len(filtered.drop_duplicates("환자번호"))
