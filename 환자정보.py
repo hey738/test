@@ -6,6 +6,8 @@ import gspread
 from streamlit_folium import folium_static
 from folium.plugins import FastMarkerCluster
 
+st.write("SECRETS:", st.secrets)
+
 def authenticate():
     # 세션 스테이트에 인증 플래그 초기화
     if "authenticated" not in st.session_state:
