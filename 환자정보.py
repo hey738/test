@@ -24,7 +24,7 @@ def authenticate():
         st.stop()
 
     # 맞으면 세션에 기록하고 바로 리턴(다음 줄부터 본문 실행)
-    if pw == st.secrets["APP_PASSWORD"]:
+    if pw == st.secrets["app_password"]:
         st.session_state.authenticated = True
         return
 
